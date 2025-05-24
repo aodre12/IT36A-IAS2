@@ -1,3 +1,32 @@
+<?php
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Collect value of input field
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+
+    // Basic validation (you would do more thorough validation in a real application)
+    if (!empty($first_name) && !empty($last_name) && !empty($username) && !empty($email) && !empty($password) && !empty($confirm_password)) {
+        if ($password === $confirm_password) {
+            echo "<h2>Sign Up Attempt:</h2>";
+            echo "<p>First Name: " . htmlspecialchars($first_name) . "</p>";
+            echo "<p>Last Name: " . htmlspecialchars($last_name) . "</p>";
+            echo "<p>Username: " . htmlspecialchars($username) . "</p>";
+            echo "<p>Email: " . htmlspecialchars($email) . "</p>";
+            echo "<p>Password: " . htmlspecialchars($password) . "</p>";
+            // In a real application, you would process the registration here.
+        } else {
+            echo "<p>Password and Confirm Password do not match.</p>";
+        }
+    } else {
+        echo "<p>Please fill in all fields.</p>";
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,27 +63,6 @@
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" placeholder="uiuxsaeed@gmail.com">
-                </div>
-                 <div class="form-group">
-                    <label for="phone">Phone</label>
-                    <input type="tel" id="phone" name="phone" placeholder="e.g. +13448747684">
-                </div>
-                 <div class="form-group">
-                    <label for="born">Born</label>
-                    <input type="date" id="born" name="born" placeholder="08/16/2000">
-                </div>
-                <div class="form-group">
-                    <label for="address">Address</label>
-                    <input type="text" id="address" name="address" placeholder="e.g. MH. AlexResidency, Block No.244321">
-                </div>
-                <div class="form-group">
-                    <label for="gender">Gender</label>
-                    <div class="radio-group">
-                        <input type="radio" id="male" name="gender" value="male">
-                        <label for="male">Male</label>
-                        <input type="radio" id="female" name="gender" value="female">
-                        <label for="female">Female</label>
-                    </div>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
