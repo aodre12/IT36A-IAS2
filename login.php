@@ -49,9 +49,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <button type="submit">Login</button>
                 <div class="options">or</div>
                 <div class="social-login">
-                    <img src="google.png" alt="Google">
-                    <img src="facebook.png" alt="Facebook">
-                    <img src="apple.png" alt="Apple">
+                    <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google" width="30">
+                    <img src="https://img.icons8.com/color/48/000000/facebook-new.png" alt="Facebook" width="30">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/mac-os.png" alt="Apple" width="30">
+
                 </div>
                 <div class="create-account">
                     Don't Have an account? <a href="signup.php">Create Account</a>
