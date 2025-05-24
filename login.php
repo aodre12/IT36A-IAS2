@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <p>Create and account to Join Our Community</p>
         </div>
         <div class="right-panel">
-            <h2>Hello SafeTime User, Welcome !</h2>
+            <h2>Hello ! Welcome back</h2>
             <form action="login.php" method="post">
                 <div class="form-group">
                     <label for="email">Email</label>
@@ -52,7 +52,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google" width="30">
                     <img src="https://img.icons8.com/color/48/000000/facebook-new.png" alt="Facebook" width="30">
                     <img src="https://img.icons8.com/ios-filled/50/000000/mac-os.png" alt="Apple" width="30">
-
                 </div>
                 <div class="create-account">
                     Don't Have an account? <a href="signup.php">Create Account</a>

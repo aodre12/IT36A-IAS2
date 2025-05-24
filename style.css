@@ -59,6 +59,8 @@ body {
 
 .logo img {
     width: 80px;
+    display: block;
+    margin: 0 auto;
 }
 
 .form-group {
@@ -120,6 +122,10 @@ button:hover {
 
 .options a:hover {
     text-decoration: underline;
+}
+
+.social-login {
+    text-align: center;
 }
 
 .social-login img {
