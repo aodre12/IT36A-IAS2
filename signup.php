@@ -38,15 +38,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="container">
         <div class="left-panel">
-            <h2>Advanture start here</h2>
+            <h2>Making Every Moment Count — Safely.</h2>
             <p>Create and account to Join Our Community</p>
         </div>
         <div class="right-panel">
-            <div class="logo">
-                <img src="logo.png" alt="Logo">
-            </div>
             <h2>Sign-up</h2>
-            <p>Register yourself to do something on Lidia.</p>
+            <p>Register yourself to Safe Time!</p>
             <form action="signup.php" method="post">
                 <div class="form-group">
                     <label for="first_name">First name</label>

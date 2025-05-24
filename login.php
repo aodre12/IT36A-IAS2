@@ -30,9 +30,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <p>Create and account to Join Our Community</p>
         </div>
         <div class="right-panel">
-            <div class="logo">
-                <img src="logo.png" alt="Logo">
-            </div>
             <h2>Hello ! Welcome back</h2>
             <form action="login.php" method="post">
                 <div class="form-group">
