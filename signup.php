@@ -5,20 +5,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Collect value of input field
     $first_name = $_POST['first_name'];
     $last_name = $_POST['last_name'];
-    $username = $_POST['username'];
     $email = $_POST['email'];
-    $gender = $_POST['gender'];
     $password = $_POST['password'];
     // $confirm_password = $_POST['confirm_password']; // Confirm password check should be done client-side or before this point
 
     // Basic validation (you would do more thorough validation in a real application)
-    if (!empty($first_name) && !empty($last_name) && !empty($username) && !empty($email) && !empty($gender) && !empty($password)) {
+    if (!empty($first_name) && !empty($last_name) && !empty($email) && !empty($password)) {
         // Prepare an insert statement
-        $sql = "INSERT INTO users (first_name, last_name, username, email, gender, password) VALUES (?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?, ?, ?)";
 
         if ($stmt = $conn->prepare($sql)) {
             // Bind variables to the prepared statement as parameters
-            $stmt->bind_param("ssssss", $first_name, $last_name, $username, $email, $gender, $password);
+            $stmt->bind_param("ssssss", $first_name, $last_name, $email, $password);
 
             // Attempt to execute the prepared statement
             if ($stmt->execute()) {
@@ -67,21 +65,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="text" id="last_name" name="last_name" placeholder="Doe">
                 </div>
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" placeholder="johndoe">
-                </div>
-                <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" placeholder="uiuxsaeed@gmail.com">
                 </div>
-                <div class="form-group">
-                    <label for="gender">Gender</label>
-                    <select id="gender" name="gender">
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
+                
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="e.g. 2McDc6cdN8jk9z">
