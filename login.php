@@ -52,12 +52,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
     <div class="container">
-        <div class="left-panel">
-            <h2>Adventure start here</h2>
-            <p>Create and account to Join Our Community</p>
-        </div>
-        <div class="right-panel">
-            <h2>Hello ! Welcome back</h2>
+        <div class="form-container">
+            <h2>Login</h2>
             <?php 
             if(!empty($login_err)){
                 echo '<div class="alert alert-danger">' . $login_err . '</div>';
@@ -65,32 +61,20 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
             ?>
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" name="email" id="email" class="form-control <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $email; ?>" placeholder="Enter your email address">
+                    <label>Email</label>
+                    <input type="email" name="email" class="form-control <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $email; ?>">
                     <span class="invalid-feedback"><?php echo $email_err; ?></span>
                 </div>    
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" name="password" id="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" placeholder="********">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>">
                     <span class="invalid-feedback"><?php echo $password_err; ?></span>
                 </div>
-                <div class="form-group form-options">
-                    <input type="checkbox" name="remember" id="remember"> <label for="remember">Remember me</label>
-                    <a href="#" class="reset-password">Reset Password!</a>
-                </div>
                 <div class="form-group">
-                    <button type="submit" class="btn">Login</button>
+                    <input type="submit" class="btn btn-primary" value="Login">
                 </div>
+                <p>Don't have an account? <a href="signup.php">Sign up now</a>.</p>
             </form>
-            <div class="social-login">
-                <p>or</p>
-                <div class="social-icons">
-                    <img src="google_icon.png" alt="Google">
-                    <img src="facebook_icon.png" alt="Facebook">
-                    <img src="apple_icon.png" alt="Apple">
-                </div>
-            </div>
-            <p class="create-account">Don't have an account? <a href="signup.php">Create Account</a></p>
         </div>
     </div>
 </body>
