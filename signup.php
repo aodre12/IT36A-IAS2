@@ -1,17 +1,39 @@
 <?php
+include 'db_connect.php'; // Include the database connection file
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Collect value of input field
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $username = $_POST['username'];
     $email = $_POST['email'];
+    $gender = $_POST['gender'];
     $password = $_POST['password'];
+    // $confirm_password = $_POST['confirm_password']; // Confirm password check should be done client-side or before this point
 
     // Basic validation (you would do more thorough validation in a real application)
-    if (!empty($email) && !empty($password)) {
-        echo "<h2>Sign Up Attempt:</h2>";
-        echo "<p>Email: " . htmlspecialchars($email) . "</p>";
-        echo "<p>Password: " . htmlspecialchars($password) . "</p>\n";
-        // In a real application, you would process the registration here.
+    if (!empty($first_name) && !empty($last_name) && !empty($username) && !empty($email) && !empty($gender) && !empty($password)) {
+        // Prepare an insert statement
+        $sql = "INSERT INTO users (first_name, last_name, username, email, gender, password) VALUES (?, ?, ?, ?, ?, ?)";
+
+        if ($stmt = $conn->prepare($sql)) {
+            // Bind variables to the prepared statement as parameters
+            $stmt->bind_param("ssssss", $first_name, $last_name, $username, $email, $gender, $password);
+
+            // Attempt to execute the prepared statement
+            if ($stmt->execute()) {
+                echo "<p>New record created successfully</p>";
+            } else {
+                echo "<p>Error: " . $stmt->error . "</p>";
+            }
+
+            // Close statement
+            $stmt->close();
+        } else {
+             echo "<p>Error preparing statement: " . $conn->error . "</p>";
+        }
     } else {
-        echo "<p>Please fill in all fields.</p>";
+        echo "<p>Please fill in all required fields.</p>";
     }
 }
 ?>
@@ -37,8 +59,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="options">or</div>
             <form action="signup.php" method="post">
                 <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input type="text" id="first_name" name="first_name" placeholder="John">
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Last Name</label>
+                    <input type="text" id="last_name" name="last_name" placeholder="Doe">
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="johndoe">
+                </div>
+                <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" placeholder="uiuxsaeed@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
