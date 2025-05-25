@@ -1,16 +1,43 @@
 <?php
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Collect value of input field
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+// Include config file
+require_once "config.php";
+require_once "functions.php";
+require_once "session.php";
 
-    if (!empty($email) && !empty($password)) {
-        echo "<h2>Login Attempt:</h2>";
-        echo "<p>Email: " . htmlspecialchars($email) . "</p>";
-        echo "<p>Password: " . htmlspecialchars($password) . "</p>";
-        // In a real application, you would perform validation and authentication here.
+// Define variables and initialize with empty values
+$email = $password = "";
+$email_err = $password_err = $login_err = "";
+
+// Processing form data when form is submitted
+if($_SERVER["REQUEST_METHOD"] == "POST") {
+    
+    // Check if email is empty
+    if(empty(trim($_POST["email"]))) {
+        $email_err = "Please enter email.";
     } else {
-        echo "<p>Please enter both email and password.</p>";
+        $email = trim($_POST["email"]);
+    }
+    
+    // Check if password is empty
+    if(empty(trim($_POST["password"]))) {
+        $password_err = "Please enter your password.";
+    } else {
+        $password = trim($_POST["password"]);
+    }
+    
+    // Validate credentials
+    if(empty($email_err) && empty($password_err)) {
+        $result = verifyLogin($email, $password);
+        
+        if($result["success"]) {
+            // Password is correct, start a new session
+            setUserSession($result["user_id"], $result["username"]);
+            
+            // Redirect user to welcome page
+            header("location: welcome.php");
+        } else {
+            $login_err = $result["message"];
+        }
     }
 }
 ?>
@@ -25,37 +52,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
     <div class="container">
-        <div class="left-panel">
-            <h2>Making Every Moment Count — Safely.</h2>
-            <p>Create and account to Join Our Community</p>
-        </div>
-        <div class="right-panel">
-            <h2>Hello ! Welcome back</h2>
-            <form action="login.php" method="post">
+        <div class="form-container">
+            <h2>Login</h2>
+            <?php 
+            if(!empty($login_err)){
+                echo '<div class="alert alert-danger">' . $login_err . '</div>';
+            }        
+            ?>
+            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email address">
+                    <label>Email</label>
+                    <input type="email" name="email" class="form-control <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $email; ?>">
+                    <span class="invalid-feedback"><?php echo $email_err; ?></span>
+                </div>    
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>">
+                    <span class="invalid-feedback"><?php echo $password_err; ?></span>
                 </div>
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="********">
+                    <input type="submit" class="btn btn-primary" value="Login">
                 </div>
-                <div class="options">
-                    <label>
-                        <input type="checkbox" name="remember"> Remember me
-                    </label>
-                    <a href="#">Reset Password!</a>
-                </div>
-                <button type="submit">Login</button>
-                <div class="options">or</div>
-                <div class="social-login">
-                    <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google" width="30">
-                    <img src="https://img.icons8.com/color/48/000000/facebook-new.png" alt="Facebook" width="30">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/mac-os.png" alt="Apple" width="30">
-                </div>
-                <div class="create-account">
-                    Don't Have an account? <a href="signup.php">Create Account</a>
-                </div>
+                <p>Don't have an account? <a href="signup.php">Sign up now</a>.</p>
             </form>
         </div>
     </div>
