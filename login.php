@@ -27,10 +27,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="container">
         <div class="left-panel">
             <h2>Making Every Moment Count — Safely.</h2>
-            <p>Create and account to Join Our Community</p>
+            <p>Create an account to Join Our Community</p>
         </div>
         <div class="right-panel">
-            <h2>Hello ! Welcome back</h2>
+            <h2>Hello! Welcome back</h2>
             <form action="login.php" method="post">
                 <div class="form-group">
                     <label for="email">Email</label>
