@@ -8,8 +8,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $last_name = trim($_POST['last_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $role = $_POST['role'];
 
-    if (!$first_name || !$last_name || !$email || !$password) {
+    if (!$first_name || !$last_name || !$email || !$password || !$role) {
         $reg_error = 'All fields are required!';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $reg_error = 'Invalid email format!';
@@ -22,8 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $reg_error = 'Email already registered!';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $first_name, $last_name, $email, $hash);
+            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssss", $first_name, $last_name, $email, $hash, $role);
             if ($stmt->execute()) {
                 $reg_success = 'Registration successful! <a href="login.php">Login here</a>.';
             } else {
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $stmt->close();
     }
-}
+}    
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,7 +54,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .or { text-align: center; margin-bottom: 10px; color: #888; }
         .form-group { margin-bottom: 18px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 6px; }
-        .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
         .btn { width: 100%; background: #0d7cff; color: #fff; border: none; padding: 12px; border-radius: 5px; font-size: 1.1em; cursor: pointer; }
         .error { color: #d8000c; background: #ffd2d2; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; }
         .success { color: #4F8A10; background: #DFF2BF; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; }
@@ -65,13 +81,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
         <div class="left">
             <h1>Making<br>Every<br>Moment<br>Count —<br>Safely.</h1>
-            <p>Create and account to Join Our Community</p>
+            <p>Create an account to Join Our Community</p>
         </div>
         <div class="right">
             <h2>Sign up</h2>
             <div class="subtitle">Join the community today!</div>
-            <?php if ($reg_error): ?><div class="error"><?= htmlspecialchars($reg_error) ?></div><?php endif; ?>
-            <?php if ($reg_success): ?><div class="success"><?= $reg_success ?></div><?php endif; ?>
+            <?php if ($reg_error): ?>
+                <div class="error"><?= htmlspecialchars($reg_error) ?></div>
+            <?php endif; ?>
+            <?php if ($reg_success): ?>
+                <div class="success"><?= $reg_success ?></div>
+            <?php endif; ?>
             <button class="google-btn" type="button">
                 <img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-1024.png" alt="Google">
                 Sign up with Google
@@ -93,6 +113,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="e.g. 2McDc6cdN8jk9z" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" required>
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="employee">Employee</option>
+                    </select>
                 </div>
                 <button class="btn" type="submit">Sign up</button>
             </form>

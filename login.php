@@ -7,18 +7,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE email=?");
+    // Fetch id, hashed password, and role from the database
+    $stmt = $conn->prepare("SELECT id, password, role FROM users WHERE email=?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $stmt->store_result();
+
     if ($stmt->num_rows === 1) {
-        $stmt->bind_result($id, $hash);
+        $stmt->bind_result($id, $hash, $role);
         $stmt->fetch();
         if (password_verify($password, $hash)) {
             $_SESSION['user_id'] = $id;
             $_SESSION['email'] = $email;
-            header('Location: dashboard.php');
-            exit;
+            $_SESSION['role'] = $role;
+            
+            // Redirect based on the user's role
+            if ($role === 'admin') {
+                header('Location: admin.php');
+                exit;
+            } elseif ($role === 'employee') {
+                header('Location: employee.php');
+                exit;
+            } else {
+                header('Location: dashboard.php');
+                exit;
+            }
         } else {
             $login_error = 'Invalid email or password!';
         }
@@ -43,7 +56,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .right h2 { margin-bottom: 20px; font-size: 1.5em; font-weight: bold; }
         .form-group { margin-bottom: 18px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 6px; }
-        .form-group input[type="email"], .form-group input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+        .form-group input[type="email"], .form-group input[type="password"] {
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            font-size: 1em;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
         .options { display: flex; align-items: center; margin-bottom: 18px; }
         .options input[type="checkbox"] { margin-right: 6px; }
         .options a { margin-left: 10px; color: #0d7cff; text-decoration: none; font-size: 0.98em; }
@@ -75,6 +101,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="********" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" required>
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="employee">Employee</option>
+                    </select>
                 </div>
                 <div class="options">
                     <input type="checkbox" id="remember" name="remember">
