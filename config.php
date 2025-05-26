@@ -1,7 +1,7 @@
 <?php
 // Database configuration
 define('DB_SERVER', 'localhost');
-define('user_auth', 'root');
+define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
 define('DB_NAME', 'user_auth');
 define('DB_PORT', '3306'); // Default MySQL port
