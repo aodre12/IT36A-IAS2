@@ -1,81 +1,98 @@
 <?php
-// Include config file
-require_once "config.php";
-require_once "functions.php";
-require_once "session.php";
+require 'config.php';
+session_start();
+$login_error = '';
 
-// Define variables and initialize with empty values
-$email = $password = "";
-$email_err = $password_err = $login_err = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-// Processing form data when form is submitted
-if($_SERVER["REQUEST_METHOD"] == "POST") {
-    
-    // Check if email is empty
-    if(empty(trim($_POST["email"]))) {
-        $email_err = "Please enter email.";
-    } else {
-        $email = trim($_POST["email"]);
-    }
-    
-    // Check if password is empty
-    if(empty(trim($_POST["password"]))) {
-        $password_err = "Please enter your password.";
-    } else {
-        $password = trim($_POST["password"]);
-    }
-    
-    // Validate credentials
-    if(empty($email_err) && empty($password_err)) {
-        $result = verifyLogin($email, $password);
-        
-        if($result["success"]) {
-            // Password is correct, start a new session
-            setUserSession($result["user_id"], $result["username"]);
-            
-            // Redirect user to welcome page
-            header("location: welcome.php");
+    $stmt = $conn->prepare("SELECT id, password FROM users WHERE email=?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
+    if ($stmt->num_rows === 1) {
+        $stmt->bind_result($id, $hash);
+        $stmt->fetch();
+        if (password_verify($password, $hash)) {
+            $_SESSION['user_id'] = $id;
+            $_SESSION['email'] = $email;
+            header('Location: dashboard.php');
+            exit;
         } else {
-            $login_err = $result["message"];
+            $login_error = 'Invalid email or password!';
         }
+    } else {
+        $login_error = 'Invalid email or password!';
     }
+    $stmt->close();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #f2f3f7; font-family: Arial, sans-serif; }
+        .container { width: 700px; margin: 60px auto; display: flex; box-shadow: 0 0 20px #ccc; border-radius: 12px; overflow: hidden; background: #fff; }
+        .left { background: #0d7cff; color: #fff; flex: 1.2; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px; }
+        .left h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .left p { margin-top: 20px; font-size: 1.1em; }
+        .right { flex: 1.8; padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; }
+        .right h2 { margin-bottom: 20px; font-size: 1.5em; font-weight: bold; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 6px; }
+        .form-group input[type="email"], .form-group input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+        .options { display: flex; align-items: center; margin-bottom: 18px; }
+        .options input[type="checkbox"] { margin-right: 6px; }
+        .options a { margin-left: 10px; color: #0d7cff; text-decoration: none; font-size: 0.98em; }
+        .login-btn { width: 100%; background: #0d7cff; color: #fff; border: none; padding: 12px; border-radius: 5px; font-size: 1.1em; cursor: pointer; margin-bottom: 18px; }
+        .social-login { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .social-login img { width: 32px; height: 32px; margin: 0 8px; }
+        .or { text-align: center; margin-bottom: 10px; color: #888; }
+        .signup-link { text-align: center; margin-top: 10px; font-size: 1em; }
+        .signup-link a { color: #0d7cff; text-decoration: none; }
+        .error { color: #d8000c; background: #ffd2d2; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; }
+    </style>
 </head>
 <body>
     <div class="container">
-        <div class="form-container">
-            <h2>Login</h2>
-            <?php 
-            if(!empty($login_err)){
-                echo '<div class="alert alert-danger">' . $login_err . '</div>';
-            }        
-            ?>
-            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+        <div class="left">
+            <h1>Advanture start<br>here</h1>
+            <p>Create and account to Join Our Community</p>
+        </div>
+        <div class="right">
+            <h2>Hello ! Welcome back</h2>
+            <?php if ($login_error): ?>
+                <div class="error"><?= htmlspecialchars($login_error) ?></div>
+            <?php endif; ?>
+            <form method="post" action="login.php">
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $email; ?>">
-                    <span class="invalid-feedback"><?php echo $email_err; ?></span>
-                </div>    
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>">
-                    <span class="invalid-feedback"><?php echo $password_err; ?></span>
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email address" required>
                 </div>
                 <div class="form-group">
-                    <input type="submit" class="btn btn-primary" value="Login">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="********" required>
                 </div>
-                <p>Don't have an account? <a href="signup.php">Sign up now</a>.</p>
+                <div class="options">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember" style="margin-bottom:0;">Remember me</label>
+                    <a href="#">Reset Password!</a>
+                </div>
+                <button class="login-btn" type="submit">Login</button>
             </form>
+            <div class="or">or</div>
+            <div class="social-login">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
+            </div>
+            <div class="signup-link">
+                Don't Have an account? <a href="register.php">Create Account</a>
+            </div>
         </div>
     </div>
 </body>
-</html> 
+</html>
