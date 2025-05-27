@@ -1,5 +1,6 @@
 <?php
 require 'config.php';
+require 'social_login.php';
 $reg_error = '';
 $reg_success = '';
 
@@ -33,6 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 }
+
+// Handle social login requests
+if (isset($_GET['social'])) {
+    switch ($_GET['social']) {
+        case 'google':
+            handleGoogleLogin();
+            break;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -48,7 +58,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .right { flex: 1.8; padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; }
         .right h2 { margin-bottom: 10px; font-size: 1.5em; font-weight: bold; text-align: center; }
         .right .subtitle { text-align: center; margin-bottom: 18px; }
-        .google-btn { display: flex; align-items: center; justify-content: center; border: 1px solid #0d7cff; color: #222; background: #fff; border-radius: 5px; padding: 10px; font-size: 1em; cursor: pointer; margin: 0 auto 18px auto; width: 90%; }
+        .google-btn { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #0d7cff; 
+            color: #222; 
+            background: #fff; 
+            border-radius: 5px; 
+            padding: 10px; 
+            font-size: 1em; 
+            cursor: pointer; 
+            margin: 0 auto 18px auto; 
+            width: 90%;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .google-btn:hover { background-color: #f5f5f5; }
         .google-btn img { width: 22px; height: 22px; margin-right: 10px; }
         .or { text-align: center; margin-bottom: 10px; color: #888; }
         .form-group { margin-bottom: 18px; }
@@ -72,10 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="subtitle">Join the community today!</div>
             <?php if ($reg_error): ?><div class="error"><?= htmlspecialchars($reg_error) ?></div><?php endif; ?>
             <?php if ($reg_success): ?><div class="success"><?= $reg_success ?></div><?php endif; ?>
-            <button class="google-btn" type="button">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
+            
+            <a href="?social=google" class="google-btn">
+                <img src="https://static.vecteezy.com/system/resources/previews/022/484/495/non_2x/google-chrome-icon-logo-symbol-free-png.png" alt="Google">
                 Sign up with Google
-            </button>
+            </a>
+            
             <div class="or">or</div>
             <form method="post" action="register.php">
                 <div class="form-group">
