@@ -15,6 +15,7 @@ function setUserSession($user_id, $username) {
     $_SESSION["loggedin"] = true;
     $_SESSION["id"] = $user_id;
     $_SESSION["username"] = $username;
+    $_SESSION['role'] = $user['role'];
 }
 
 // Function to destroy session and redirect to login page

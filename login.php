@@ -6,26 +6,54 @@ $login_error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $selected_role = $_POST['role'] ?? ''; // Get the role selected in the form
 
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE email=?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->store_result();
-    if ($stmt->num_rows === 1) {
-        $stmt->bind_result($id, $hash);
-        $stmt->fetch();
-        if (password_verify($password, $hash)) {
-            $_SESSION['user_id'] = $id;
-            $_SESSION['email'] = $email;
-            header('Location: dashboard.php');
-            exit;
+    if (empty($email) || empty($password) || empty($selected_role)) {
+        $login_error = 'Email, password, and role are required!';
+    } else {
+        // Fetch id, hashed password, and role from the database
+        $stmt = $pdo->prepare("SELECT id, password, role FROM users WHERE email=?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = null; // Close the statement
+
+        if ($user) {
+            if (password_verify($password, $user['password'])) {
+                // Verify if the role selected in form matches the role in the database
+                if ($user['role'] !== $selected_role) {
+                    if ($selected_role === 'admin') {
+                        $login_error = 'Access Denied: Your account is not an Administrator account.';
+                    } elseif ($selected_role === 'employee') {
+                        $login_error = 'Access Denied: Your account is not an Employee account. Please select the correct role.'; // Or a more generic message
+                    } else {
+                        $login_error = 'Invalid role selection for your account.';
+                    }
+                } else {
+                    // Role matches, proceed to set session and redirect
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['email'] = $email;
+                    $_SESSION['role'] = $user['role'];
+                    
+                    // Redirect based on the user's role
+                    if ($user['role'] === 'admin') {
+                        header('Location: admin.php');
+                        exit;
+                    } elseif ($user['role'] === 'employee') {
+                        header('Location: employee.php');
+                        exit;
+                    } else {
+                        // Fallback for any other roles, though currently only admin/employee are handled
+                        header('Location: dashboard.php'); 
+                        exit;
+                    }
+                }
+            } else {
+                $login_error = 'Invalid email or password!';
+            }
         } else {
             $login_error = 'Invalid email or password!';
         }
-    } else {
-        $login_error = 'Invalid email or password!';
     }
-    $stmt->close();
 }
 ?>
 <!DOCTYPE html>
@@ -43,7 +71,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .right h2 { margin-bottom: 20px; font-size: 1.5em; font-weight: bold; }
         .form-group { margin-bottom: 18px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 6px; }
-        .form-group input[type="email"], .form-group input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+        .form-group input[type="email"], .form-group input[type="password"] {
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            font-size: 1em;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
         .options { display: flex; align-items: center; margin-bottom: 18px; }
         .options input[type="checkbox"] { margin-right: 6px; }
         .options a { margin-left: 10px; color: #0d7cff; text-decoration: none; font-size: 0.98em; }
@@ -59,11 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="container">
         <div class="left">
-            <h1>Advanture start<br>here</h1>
-            <p>Create and account to Join Our Community</p>
+            <h1>Adventure starts<br>here</h1>
+            <p>Create an account to Join Our Community</p>
         </div>
         <div class="right">
-            <h2>Hello ! Welcome back</h2>
+            <h2>Hello! Welcome back</h2>
             <?php if ($login_error): ?>
                 <div class="error"><?= htmlspecialchars($login_error) ?></div>
             <?php endif; ?>
@@ -76,6 +117,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="********" required>
                 </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" required>
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="employee">Employee</option>
+                    </select>
+                </div>
                 <div class="options">
                     <input type="checkbox" id="remember" name="remember">
                     <label for="remember" style="margin-bottom:0;">Remember me</label>
@@ -85,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
             <div class="or">or</div>
             <div class="social-login">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
+                <img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-1024.png" alt="Google">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
             </div>
