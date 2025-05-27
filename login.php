@@ -1,147 +1,185 @@
 <?php
 require 'config.php';
+require 'otp_functions.php';
+require 'social_login.php';
 session_start();
+
 $login_error = '';
+$otp_sent = false;
+$email = '';
+$role = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $selected_role = $_POST['role'] ?? ''; // Get the role selected in the form
+    $role = $_POST['role'] ?? '';
 
-    if (empty($email) || empty($password) || empty($selected_role)) {
-        $login_error = 'Email, password, and role are required!';
-    } else {
-        // Fetch id, hashed password, and role from the database
-        $stmt = $pdo->prepare("SELECT id, password, role FROM users WHERE email=?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stmt = null; // Close the statement
-
-        if ($user) {
-            if (password_verify($password, $user['password'])) {
-                // Verify if the role selected in form matches the role in the database
-                if ($user['role'] !== $selected_role) {
-                    if ($selected_role === 'admin') {
-                        $login_error = 'Access Denied: Your account is not an Administrator account.';
-                    } elseif ($selected_role === 'employee') {
-                        $login_error = 'Access Denied: Your account is not an Employee account. Please select the correct role.'; // Or a more generic message
-                    } else {
-                        $login_error = 'Invalid role selection for your account.';
-                    }
-                } else {
-                    // Role matches, proceed to set session and redirect
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['email'] = $email;
-                    $_SESSION['role'] = $user['role'];
-                    
-                    // Redirect based on the user's role
-                    if ($user['role'] === 'admin') {
-                        header('Location: admin.php');
-                        exit;
-                    } elseif ($user['role'] === 'employee') {
-                        header('Location: employee.php');
-                        exit;
-                    } else {
-                        // Fallback for any other roles, though currently only admin/employee are handled
-                        header('Location: dashboard.php'); 
-                        exit;
-                    }
-                }
+    if (isset($_POST['send_otp'])) {
+        if ($email && $role) {
+            if (generateOTP($email)) {
+                $otp_sent = true;
+                $login_error = "OTP has been sent to your email!";
             } else {
-                $login_error = 'Invalid email or password!';
+                $login_error = "Failed to send OTP. Try again.";
             }
         } else {
-            $login_error = 'Invalid email or password!';
+            $login_error = "Email and role are required!";
+        }
+    } elseif (isset($_POST['verify_otp'])) {
+        $otp = trim($_POST['otp'] ?? '');
+        if (verifyOTP($email, $otp)) {
+            $stmt = $pdo->prepare("SELECT id, role FROM users WHERE email = ? AND role = ?");
+            $stmt->execute([$email, $role]);
+            $user = $stmt->fetch();
+            if ($user) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['email'] = $email;
+                $_SESSION['role'] = $role;
+                header("Location: {$role}_dashboard.php");
+                exit;
+            } else {
+                $login_error = 'Invalid role for this email.';
+            }
+        } else {
+            $login_error = "Invalid OTP!";
+            $otp_sent = true;
+        }
+    } else {
+        if (empty($email) || empty($password) || empty($role)) {
+            $login_error = "Email, password, and role are required!";
+        } else {
+            $stmt = $pdo->prepare("SELECT id, password, role FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch();
+
+            if ($user && password_verify($password, $user['password']) && $user['role'] === $role) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['email'] = $email;
+                $_SESSION['role'] = $role;
+                header("Location: {$role}_dashboard.php");
+                exit;
+            } else {
+                $login_error = "Invalid email, password, or role!";
+            }
         }
     }
 }
+
+if (isset($_GET['social'])) {
+    switch ($_GET['social']) {
+        case 'google':
+            handleGoogleLogin();
+            break;
+        case 'facebook':
+            handleFacebookLogin();
+            break;
+    }
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>Combined Login</title>
     <style>
-        body { background: #f2f3f7; font-family: Arial, sans-serif; }
-        .container { width: 700px; margin: 60px auto; display: flex; box-shadow: 0 0 20px #ccc; border-radius: 12px; overflow: hidden; background: #fff; }
-        .left { background: #0d7cff; color: #fff; flex: 1.2; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px; }
-        .left h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .left p { margin-top: 20px; font-size: 1.1em; }
-        .right { flex: 1.8; padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; }
-        .right h2 { margin-bottom: 20px; font-size: 1.5em; font-weight: bold; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 6px; }
-        .form-group input[type="email"], .form-group input[type="password"] {
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #ddd; 
-            border-radius: 5px; 
-            font-size: 1em;
-        }
-        .form-group select {
-            width: 100%;
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-container { max-width: 400px; margin: auto; }
+        .hidden { display: none; }
+        .error { color: red; margin-bottom: 10px; }
+        .social-buttons a {
+            display: inline-block;
             padding: 10px;
-            border: 1px solid #ddd;
+            margin: 5px;
+            background: #eee;
             border-radius: 5px;
-            font-size: 1em;
+            text-decoration: none;
         }
-        .options { display: flex; align-items: center; margin-bottom: 18px; }
-        .options input[type="checkbox"] { margin-right: 6px; }
-        .options a { margin-left: 10px; color: #0d7cff; text-decoration: none; font-size: 0.98em; }
-        .login-btn { width: 100%; background: #0d7cff; color: #fff; border: none; padding: 12px; border-radius: 5px; font-size: 1.1em; cursor: pointer; margin-bottom: 18px; }
-        .social-login { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
-        .social-login img { width: 32px; height: 32px; margin: 0 8px; }
-        .or { text-align: center; margin-bottom: 10px; color: #888; }
-        .signup-link { text-align: center; margin-top: 10px; font-size: 1em; }
-        .signup-link a { color: #0d7cff; text-decoration: none; }
-        .error { color: #d8000c; background: #ffd2d2; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; }
+        .toggle-btns button {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="left">
-            <h1>Adventure starts<br>here</h1>
-            <p>Create an account to Join Our Community</p>
+    <div class="form-container">
+        <h2>Login</h2>
+
+        <?php if ($login_error): ?>
+            <p class="error"><?= htmlspecialchars($login_error) ?></p>
+        <?php endif; ?>
+
+        <div class="toggle-btns">
+            <button type="button" onclick="showForm('password')">Password Login</button>
+            <button type="button" onclick="showForm('otp')">OTP Login</button>
         </div>
-        <div class="right">
-            <h2>Hello! Welcome back</h2>
-            <?php if ($login_error): ?>
-                <div class="error"><?= htmlspecialchars($login_error) ?></div>
+
+        <!-- Password Login Form -->
+        <form id="passwordForm" method="post" <?= $otp_sent ? 'class="hidden"' : '' ?>>
+            <div>
+                <label>Email</label>
+                <input type="email" name="email" value="<?= htmlspecialchars($email) ?>" required>
+            </div>
+            <div>
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+            <div>
+                <label>Role</label>
+                <select name="role" required>
+                    <option value="">-- Select Role --</option>
+                    <option value="admin" <?= $role === 'admin' ? 'selected' : '' ?>>Admin</option>
+                    <option value="staff" <?= $role === 'staff' ? 'selected' : '' ?>>Staff</option>
+                    <option value="user" <?= $role === 'user' ? 'selected' : '' ?>>User</option>
+                </select>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+
+        <!-- OTP Login Form -->
+        <form id="otpForm" method="post" <?= $otp_sent || isset($_POST['send_otp']) ? '' : 'class="hidden"' ?>>
+            <div>
+                <label>Email</label>
+                <input type="email" name="email" value="<?= htmlspecialchars($email) ?>" required>
+            </div>
+            <div>
+                <label>Role</label>
+                <select name="role" required>
+                    <option value="">-- Select Role --</option>
+                    <option value="admin" <?= $role === 'admin' ? 'selected' : '' ?>>Admin</option>
+                    <option value="staff" <?= $role === 'staff' ? 'selected' : '' ?>>Staff</option>
+                    <option value="user" <?= $role === 'user' ? 'selected' : '' ?>>User</option>
+                </select>
+            </div>
+
+            <?php if ($otp_sent): ?>
+                <div>
+                    <label>Enter OTP</label>
+                    <input type="text" name="otp" required>
+                </div>
+                <button type="submit" name="verify_otp">Verify OTP</button>
+            <?php else: ?>
+                <button type="submit" name="send_otp">Send OTP</button>
             <?php endif; ?>
-            <form method="post" action="login.php">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email address" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="********" required>
-                </div>
-                <div class="form-group">
-                    <label for="role">Role</label>
-                    <select id="role" name="role" required>
-                        <option value="" disabled selected>Select Role</option>
-                        <option value="admin">Admin</option>
-                        <option value="employee">Employee</option>
-                    </select>
-                </div>
-                <div class="options">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember" style="margin-bottom:0;">Remember me</label>
-                    <a href="#">Reset Password!</a>
-                </div>
-                <button class="login-btn" type="submit">Login</button>
-            </form>
-            <div class="or">or</div>
-            <div class="social-login">
-                <img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-1024.png" alt="Google">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
-            </div>
-            <div class="signup-link">
-                Don't Have an account? <a href="register.php">Create Account</a>
-            </div>
+        </form>
+
+        <!-- Social Login -->
+        <div class="social-buttons">
+            <h4>Or login with</h4>
+            <a href="?social=google">Google</a>
+            <a href="?social=facebook">Facebook</a>
         </div>
     </div>
+
+    <script>
+        function showForm(type) {
+            document.getElementById('passwordForm').classList.add('hidden');
+            document.getElementById('otpForm').classList.add('hidden');
+            if (type === 'password') {
+                document.getElementById('passwordForm').classList.remove('hidden');
+            } else {
+                document.getElementById('otpForm').classList.remove('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
