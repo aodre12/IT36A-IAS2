@@ -6,35 +6,53 @@ $login_error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $selected_role = $_POST['role'] ?? ''; // Get the role selected in the form
 
-    // Fetch id, hashed password, and role from the database
-    $stmt = $pdo->prepare("SELECT id, password, role FROM users WHERE email=?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    $stmt = null; // Close the statement
+    if (empty($email) || empty($password) || empty($selected_role)) {
+        $login_error = 'Email, password, and role are required!';
+    } else {
+        // Fetch id, hashed password, and role from the database
+        $stmt = $pdo->prepare("SELECT id, password, role FROM users WHERE email=?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = null; // Close the statement
 
-    if ($user) {
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['email'] = $email;
-            $_SESSION['role'] = $user['role'];
-            
-            // Redirect based on the user's role
-            if ($user['role'] === 'admin') {
-                header('Location: admin.php');
-                exit;
-            } elseif ($user['role'] === 'employee') {
-                header('Location: employee.php');
-                exit;
+        if ($user) {
+            if (password_verify($password, $user['password'])) {
+                // Verify if the role selected in form matches the role in the database
+                if ($user['role'] !== $selected_role) {
+                    if ($selected_role === 'admin') {
+                        $login_error = 'Access Denied: Your account is not an Administrator account.';
+                    } elseif ($selected_role === 'employee') {
+                        $login_error = 'Access Denied: Your account is not an Employee account. Please select the correct role.'; // Or a more generic message
+                    } else {
+                        $login_error = 'Invalid role selection for your account.';
+                    }
+                } else {
+                    // Role matches, proceed to set session and redirect
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['email'] = $email;
+                    $_SESSION['role'] = $user['role'];
+                    
+                    // Redirect based on the user's role
+                    if ($user['role'] === 'admin') {
+                        header('Location: admin.php');
+                        exit;
+                    } elseif ($user['role'] === 'employee') {
+                        header('Location: employee.php');
+                        exit;
+                    } else {
+                        // Fallback for any other roles, though currently only admin/employee are handled
+                        header('Location: dashboard.php'); 
+                        exit;
+                    }
+                }
             } else {
-                header('Location: dashboard.php');
-                exit;
+                $login_error = 'Invalid email or password!';
             }
         } else {
             $login_error = 'Invalid email or password!';
         }
-    } else {
-        $login_error = 'Invalid email or password!';
     }
 }
 ?>
