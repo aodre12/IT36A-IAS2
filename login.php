@@ -8,24 +8,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
 
     // Fetch id, hashed password, and role from the database
-    $stmt = $conn->prepare("SELECT id, password, role FROM users WHERE email=?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->store_result();
+    $stmt = $pdo->prepare("SELECT id, password, role FROM users WHERE email=?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = null; // Close the statement
 
-    if ($stmt->num_rows === 1) {
-        $stmt->bind_result($id, $hash, $role);
-        $stmt->fetch();
-        if (password_verify($password, $hash)) {
-            $_SESSION['user_id'] = $id;
+    if ($user) {
+        if (password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
             $_SESSION['email'] = $email;
-            $_SESSION['role'] = $role;
+            $_SESSION['role'] = $user['role'];
             
             // Redirect based on the user's role
-            if ($role === 'admin') {
+            if ($user['role'] === 'admin') {
                 header('Location: admin.php');
                 exit;
-            } elseif ($role === 'employee') {
+            } elseif ($user['role'] === 'employee') {
                 header('Location: employee.php');
                 exit;
             } else {
@@ -38,7 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $login_error = 'Invalid email or password!';
     }
-    $stmt->close();
 }
 ?>
 <!DOCTYPE html>

@@ -15,23 +15,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $reg_error = 'Invalid email format!';
     } else {
-        $stmt = $conn->prepare("SELECT id FROM users WHERE email=?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows > 0) {
+        // Check if email already exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email=?");
+        $stmt->execute([$email]);
+        $existing_user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = null; // Close the statement
+
+        if ($existing_user) {
             $reg_error = 'Email already registered!';
         } else {
+            // Insert new user
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssss", $first_name, $last_name, $email, $hash, $role);
-            if ($stmt->execute()) {
+            $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)");
+            if ($stmt->execute([$first_name, $last_name, $email, $hash, $role])) {
                 $reg_success = 'Registration successful! <a href="login.php">Login here</a>.';
             } else {
                 $reg_error = 'Registration failed. Try again.';
             }
+            $stmt = null; // Close the statement
         }
-        $stmt->close();
     }
 }    
 ?>
